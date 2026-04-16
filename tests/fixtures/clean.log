@@ -1,0 +1,9 @@
+[Pipeline] Start of Pipeline
+[Pipeline] stage Build
++ mvn clean package -DskipTests
+[INFO] BUILD SUCCESS
+[Pipeline] stage Test
++ mvn test
+[INFO] Tests run: 42, Failures: 0, Errors: 0
+[INFO] BUILD SUCCESS
+[Pipeline] End of Pipeline

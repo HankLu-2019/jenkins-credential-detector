@@ -1,0 +1,49 @@
+# jenkins-log-sentinel configuration
+# Copy to config.yml and adjust for your environment.
+
+database_url: "postgresql://sentinel:sentinel@localhost:5432/sentinel"
+
+jenkins_instances:
+  - name: "jenkins-main"
+    jobs_path: "/home/jobs"
+    description: "Primary Jenkins instance"
+  - name: "jenkins-staging"
+    jobs_path: "/mnt/jenkins-staging/jobs"
+    description: "Staging Jenkins instance"
+
+ollama:
+  base_url: "http://localhost:11434"
+  model: "qwen2.5-coder:7b"
+  timeout_seconds: 120
+  # Max lines of a log to pre-filter before LLM stage.
+  # Logs larger than this are chunked.
+  max_chunk_lines: 50
+
+scan:
+  # How many days back to look on the very first run (backfill).
+  # After first run, only new builds are scanned.
+  initial_backfill_days: 7
+  # Number of parallel log pipelines to run.
+  concurrency: 4
+  # Skip builds whose log file is larger than this (bytes). 0 = no limit.
+  max_log_size_bytes: 52428800 # 50 MB
+
+notifications:
+  # Apprise notification URLs. See https://github.com/caronc/apprise
+  # Examples:
+  #   mailto://user:pass@gmail.com
+  #   slack://tokenA/tokenB/tokenC
+  #   teams://...
+  channels: []
+
+  # For TIMER-triggered builds with no individual owner, send to this address.
+  fallback_recipient: "security-team@example.com"
+
+  # Only notify for findings at or above this severity.
+  min_severity: "HIGH" # CRITICAL | HIGH | MEDIUM | LOW
+
+trufflehog:
+  # Path to trufflehog binary. Leave empty to skip TruffleHog stage.
+  binary: "trufflehog"
+  # Extra args passed to: trufflehog filesystem --json <log_path> [extra_args]
+  extra_args: []

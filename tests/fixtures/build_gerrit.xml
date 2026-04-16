@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<build>
+  <actions>
+    <hudson.model.CauseAction>
+      <causeBag class="java.util.concurrent.CopyOnWriteArrayList">
+        <com.sonyericsson.hudson.plugins.gerrit.trigger.hudsontrigger.GerritCause>
+          <event class="com.sonymobile.tools.gerrit.gerritevents.dto.events.PatchsetCreated">
+            <change>
+              <project>my-repo</project>
+              <branch>main</branch>
+              <id>Iabcdef1234567890abcdef1234567890abcdef12</id>
+              <number>42</number>
+              <subject>Add new feature</subject>
+              <owner>
+                <name>Alice Dev</name>
+                <email>alice@example.com</email>
+              </owner>
+            </change>
+            <patchSet>
+              <number>3</number>
+            </patchSet>
+          </event>
+        </com.sonyericsson.hudson.plugins.gerrit.trigger.hudsontrigger.GerritCause>
+      </causeBag>
+    </hudson.model.CauseAction>
+  </actions>
+  <startTime>1713225600000</startTime>
+  <result>SUCCESS</result>
+</build>

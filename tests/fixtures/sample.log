@@ -1,0 +1,22 @@
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on agent-01
+[Pipeline] stage
+[Pipeline] { (Build)
++ mvn clean package
+[INFO] BUILD SUCCESS
+[Pipeline] stage
+[Pipeline] { (Deploy)
++ echo "Deploying application"
++ export DB_PASSWORD=SuperSecret123!
++ export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
++ export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+Running docker login
+Authorization: Basic dXNlcjpteXNlY3JldDEyMw==
+Login Succeeded
+Connecting to database: postgresql://dbuser:S3cr3tP@ss@db.internal:5432/myapp
+[Pipeline] }
+[Pipeline] stage
+[Pipeline] { (Notify)
+curl -H "Authorization: Bearer ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ012345678"
+[Pipeline] End of Pipeline

@@ -1,0 +1,130 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sentinel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-sentinel}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sentinel}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    # Expose on localhost only; scanner/api reach it via internal network
+    ports:
+      - "127.0.0.1:11434:11434"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:11434/api/tags"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # One-shot container: pulls the configured model on first start
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["ollama", "pull", "${OLLAMA_MODEL:-qwen2.5-coder:7b}"]
+    restart: "no"
+
+  # Runs DB migrations then exits
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.scanner
+    command: ["uv", "run", "alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://sentinel:changeme@postgres:5432/sentinel}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  scanner:
+    build:
+      context: .
+      dockerfile: Dockerfile.scanner
+    command: >
+      sh -c '
+        echo "Waiting for migrations...";
+        sleep 5;
+        while true; do
+          uv run sentinel-scan run;
+          echo "Scan complete. Sleeping 24h...";
+          sleep 86400;
+        done
+      '
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://sentinel:changeme@postgres:5432/sentinel}
+      SENTINEL_CONFIG: /app/config.yml
+    volumes:
+      - ./config.yml:/app/config.yml:ro
+      # Mount Jenkins jobs directory read-only
+      # Add one line per Jenkins instance matching your config.yml
+      - ${JENKINS_JOBS_PATH:-/home/jobs}:/mnt/jenkins-main/jobs:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.scanner
+    command:
+      [
+        "uv",
+        "run",
+        "uvicorn",
+        "api.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+      ]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://sentinel:changeme@postgres:5432/sentinel}
+      SENTINEL_CONFIG: /app/config.yml
+    volumes:
+      - ./config.yml:/app/config.yml:ro
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "0.0.0.0:3000:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  ollama_data:

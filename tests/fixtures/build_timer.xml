@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<build>
+  <actions>
+    <hudson.model.CauseAction>
+      <causeBag class="java.util.concurrent.CopyOnWriteArrayList">
+        <hudson.triggers.TimerTrigger_-TimerTriggerCause/>
+      </causeBag>
+    </hudson.model.CauseAction>
+  </actions>
+  <startTime>1713225600000</startTime>
+  <result>SUCCESS</result>
+</build>
